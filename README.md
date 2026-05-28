@@ -40,20 +40,23 @@ Audit Evidence + NHI / Orphan Account Findings
 Object adds, object modifications, reconciliation results, unmatched accounts
 ```
 
+
 ---
 
 ## Tools and Technologies
 
-| Tool                            | Purpose                                                   |
-| ------------------------------- | --------------------------------------------------------- |
-| midPoint                        | Identity governance, reconciliation, lifecycle automation |
-| SimplifyHR / CSV                | Authoritative HR identity source                          |
-| OpenLDAP / 389 Directory Server | Target enterprise directory                               |
-| phpLDAPadmin                    | LDAP account verification                                 |
-| Groovy                          | Attribute transformation and lifecycle logic              |
-| Linux                           | Directory service and project implementation platform support                |
+| Tool | Purpose |
+|---|---|
+| midPoint | Identity governance, reconciliation, lifecycle automation, and access lifecycle orchestration |
+| SimplifyHR / CSV Source | Authoritative workforce identity source for joiner and leaver events |
+| OpenLDAP / 389 Directory Server | Downstream enterprise directory target for provisioned accounts |
+| phpLDAPadmin | Directory verification tool used to validate LDAP account state |
+| Groovy | Attribute transformation and lifecycle logic for mappings |
+| Linux | Platform layer supporting directory services and IAM components |
+| GitHub | Documentation, evidence packaging, and portfolio repository hosting |
 
 ---
+
 
 ## IAM Concepts Demonstrated
 
@@ -96,11 +99,11 @@ Result: a new workforce identity was created and provisioned end-to-end with no 
 
 ### Phase 4 — Leaver Process
 
-Oliver Bennett was marked as **Terminated** in SimplifyHR. The HR source retained Oliver as a terminated workforce record, but he was removed from the active identity population. After reconciliation, midPoint detected the HR status change, disabled the midPoint user, and triggered deletion/removal of the corresponding OpenLDAP account from `ou=people` in the lab configuration.
+Oliver Bennett was marked as **Terminated** in SimplifyHR. The HR source retained Oliver as a terminated workforce record, but he was removed from the active identity population. After reconciliation, midPoint detected the HR status change, disabled the midPoint user, and triggered deletion/removal of the corresponding OpenLDAP account from `ou=people` in the project configuration.
 
 Result: the terminated employee remained visible in the HR source as a terminated record, while the downstream LDAP account was removed from the active directory target.
 
-> **Production note:** In many enterprise environments, the preferred production pattern is to disable the account first, move it to an inactive organizational unit or apply an account lock, preserve audit history for a defined retention period, and delete only after the retention policy allows it. The lab simplified this by removing the account from OpenLDAP after termination.
+> **Production note:** In many enterprise environments, the preferred production pattern is to disable the account first, move it to an inactive organizational unit or apply an account lock, preserve audit history for a defined retention period, and delete only after the retention policy allows it. The project simplified this by removing the account from OpenLDAP after termination.
 
 ### Phase 5 — Non-Human Identity / Orphan Account Discovery
 
@@ -114,27 +117,28 @@ Result: the unmanaged service account was identified as a governance finding req
 
 ### HR Source to midPoint
 
-| HR Attribute | midPoint Attribute                | Purpose                                    | Design Note                                                     |
-| ------------ | --------------------------------- | ------------------------------------------ | --------------------------------------------------------------- |
-| `empid`      | `name`                            | Lab username / primary resource identifier | Used by the lab for exact matching                              |
-| `empid`      | `emailAddress`                    | Lab-generated email address                | Production design would usually separate email from employee ID |
-| `firstname`  | `givenName`                       | First name                                 | Direct profile mapping                                          |
-| `lastname`   | `familyName`                      | Last name                                  | Later maps to LDAP surname                                      |
-| `department` | `organizationalUnit`              | Department placement                       | Supports later RBAC/mover logic                                 |
-| `costcenter` | `costCenter`                      | Business cost center                       | Supports reporting and downstream attributes                    |
-| `status`     | `activation/administrativeStatus` | Lifecycle state                            | Drives joiner/leaver behavior                                   |
+| HR Attribute | midPoint Attribute | Transformation | Purpose | Design Note |
+|---|---|---|---|---|
+| `empid` | `name` | As-is | Project username / primary identifier | Used for exact-match correlation in this implementation |
+| `empid` | `employeeNumber` | As-is | Stable employee identifier | Better correlation key than name or email |
+| `empid` | `emailAddress` | Groovy: `input + '@simplifytech.com'` | Project-generated email address | Production email should follow enterprise naming policy |
+| `firstname` | `givenName` | As-is | First name | Standard identity profile attribute |
+| `lastname` | `familyName` | As-is | Last name | Maps later to LDAP surname attribute |
+| `department` | `organizationalUnit` | As-is | Department placement | Supports RBAC and mover logic |
+| `costcenter` | `costCenter` | As-is | Business cost center | Supports reporting and downstream attribute mapping |
+| `status` | `activation/administrativeStatus` | Groovy lifecycle logic | Active or disabled identity state | Drives joiner/leaver behavior |
 
 ### midPoint to OpenLDAP
 
-| midPoint Attribute       | LDAP Attribute     | Purpose                 | Design Note                        |
-| ------------------------ | ------------------ | ----------------------- | ---------------------------------- |
-| `givenName`              | `givenName`        | First name              | Direct mapping                     |
-| `familyName`             | `sn`               | Surname / last name     | Required LDAP naming convention    |
-| `givenName + familyName` | `cn`               | Common name             | Generated with Groovy expression   |
-| `name`                   | `dn`               | LDAP distinguished name | Routes active users to `ou=people` |
-| `emailAddress`           | `mail`             | Email address           | Generated from lab identifier      |
-| `costCenter`             | `departmentNumber` | Cost center tracking    | Business reporting attribute       |
-| `employeeNumber`         | `employeeNumber`   | Employee identifier     | Supports identity traceability     |
+| midPoint Attribute | LDAP Attribute | Transformation | Purpose | Design Note |
+|---|---|---|---|---|
+| `givenName` | `givenName` | As-is | First name | Standard LDAP person attribute |
+| `familyName` | `sn` | As-is | Surname / last name | Required by many LDAP person object classes |
+| `givenName` + `familyName` | `cn` | Groovy: `givenName + ' ' + familyName` | Common name | Generates readable full name |
+| `name` | `dn` | Groovy DN logic | LDAP distinguished name | Routes account into directory tree |
+| `emailAddress` | `mail` | As-is | Email address | Directory profile attribute |
+| `costCenter` | `departmentNumber` | As-is | Cost center tracking | Supports reporting and downstream classification |
+| `employeeNumber` | `employeeNumber` | As-is | Employee identifier | Preserves identity traceability in LDAP |
 
 ---
 
@@ -161,7 +165,7 @@ This project used midPoint and OpenLDAP in a lab environment, but the same IAM a
 
 ## Correlation and Reconciliation Design
 
-Correlation determines whether an incoming HR record or LDAP account belongs to an existing midPoint user. In this lab, the correlation rule uses exact matching on the `name` attribute, which holds the HR employee ID value.
+Correlation determines whether an incoming HR record or LDAP account belongs to an existing midPoint user. In this project implementation, the correlation rule uses exact matching on the `name` attribute, which holds the HR employee ID value.
 
 Reconciliation compares source and target data against midPoint’s governed identity state. It detects new records, updates changed identities, links existing accounts, identifies unmatched accounts, and triggers provisioning or lifecycle actions.
 
@@ -226,7 +230,7 @@ Audit evidence captured
 Deletion only after retention policy allows it
 ```
 
-### Lab Behavior
+### Project Behavior
 
 ```text
 Oliver Bennett marked Terminated in SimplifyHR
@@ -242,7 +246,7 @@ midPoint detects HR status change
 midPoint user becomes disabled
         |
         v
-OpenLDAP account deleted / removed from ou=people in lab configuration
+OpenLDAP account deleted / removed from ou=people in project configuration
         |
         v
 Audit trail records lifecycle event
@@ -346,7 +350,7 @@ Oliver Bennett remained in SimplifyHR as a terminated record, but his active acc
 
 ### 3. Correlation Keys Should Be Stable
 
-The lab uses employee ID as the `name` value for exact matching. This works for training because it is stable and unique. In production, I would usually separate the correlation key from the username and email address.
+The project implementation uses employee ID as the `name` value for exact matching. This works for this environment because it is stable and unique. In production, I would usually separate the correlation key from the username and email address.
 
 ```text
 Correlation identifier ≠ Login username ≠ Email address
@@ -358,7 +362,7 @@ Connecting a target resource is not enough. midPoint needs an assignment or role
 
 ### 5. Disablement Is Usually Preferred Before Deletion
 
-The lab demonstrated removal from OpenLDAP after termination. In production, I would typically disable the account or move it to an inactive OU first, then delete later based on retention policy.
+The project implementation demonstrated removal from OpenLDAP after termination. In production, I would typically disable the account or move it to an inactive OU first, then delete later based on retention policy.
 
 ### 6. Unmatched Accounts Are Governance Findings
 
@@ -378,88 +382,33 @@ It also shows how identity governance can support compliance readiness by produc
 
 ---
 
-## Repository Structure
 
-```text
-enterprise-iam-lifecycle-automation/
-├── README.md
-├── architecture/
-│   └── iam-lifecycle-architecture.png
-├── screenshots/
-│   ├── 01-simplifyhr-before-state.png
-│   ├── 02-midpoint-hr-resource-inbound-mappings.png
-│   ├── 03-midpoint-users-after-hr-reconciliation.png
-│   ├── 04-openldap-resource-outbound-mappings.png
-│   ├── 05-ldap-accounts-provisioned.png
-│   ├── 06-joiner-before-after.png
-│   ├── 07-leaver-simplifyhr-terminated.png
-│   ├── 08-leaver-midpoint-disabled.png
-│   ├── 09-leaver-ldap-account-removed.png
-│   ├── 10-audit-log-lifecycle-events.png
-│   └── 11-unmatched-service-account.png
-├── evidence/
-│   ├── evidence-map.md
-│   └── grc-control-mapping.md
-├── mappings/
-│   ├── hr-to-midpoint-mapping.md
-│   └── midpoint-to-openldap-mapping.md
-└── lessons-learned.md
-```
+## Key Design Decisions
 
----
+- HR was treated as the authoritative source because workforce lifecycle state should originate from the system that owns employment status.
 
-## Screenshot Evidence Map
+- midPoint was used as the governance control plane because identity lifecycle decisions should be centralized before access is provisioned or removed from downstream systems.
 
-| Screenshot                                    | File Name                                       | What It Proves                                                                      | README Section Supported            |
-| --------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- |
-| SimplifyHR initial workforce / active records | `01-simplifyhr-before-state.png`                | HR source contained the workforce population before IAM processing                  | Business Problem / Phase 1          |
-| SimplifyHR inbound mappings                   | `02-midpoint-hr-resource-inbound-mappings.png`  | HR attributes were mapped into midPoint identity attributes                         | Attribute Mapping Design            |
-| midPoint Users page after HR reconciliation   | `03-midpoint-users-after-hr-reconciliation.png` | HR records became governed midPoint focus objects                                   | Phase 1 / Evidence Captured         |
-| OpenLDAP outbound mappings                    | `04-openldap-resource-outbound-mappings.png`    | midPoint attributes were mapped to LDAP account attributes                          | Phase 2 / Attribute Mapping Design  |
-| LDAP accounts provisioned in phpLDAPadmin     | `05-ldap-accounts-provisioned.png`              | Accounts were created in the downstream directory through IAM provisioning          | Phase 2 / Evidence Captured         |
-| Joiner before/after screenshots               | `06-joiner-before-after.png`                    | A new employee was created in HR and provisioned through reconciliation             | Joiner Flow                         |
-| SimplifyHR leaver state for Oliver Bennett    | `07-leaver-simplifyhr-terminated.png`           | HR retained Oliver as terminated while removing him from active identity population | Leaver Flow                         |
-| midPoint disabled state for Oliver Bennett    | `08-leaver-midpoint-disabled.png`               | midPoint detected the HR lifecycle change and disabled the governed identity        | Leaver Flow / GRC Mapping           |
-| LDAP account removed from active target       | `09-leaver-ldap-account-removed.png`            | Downstream active LDAP access was removed after reconciliation                      | Leaver Flow / Evidence Captured     |
-| Audit log / Records lifecycle events          | `10-audit-log-lifecycle-events.png`             | Lifecycle events were system-recorded with timestamps and initiator details         | GRC and Compliance Evidence Mapping |
-| Unmatched service account / NHI finding       | `11-unmatched-service-account.png`              | LDAP contained an account without a governed identity owner or HR source            | NHI / Orphan Account Discovery      |
+- OpenLDAP was used as the downstream directory target to demonstrate how governed identities are translated into target-system accounts.
 
----
+- Employee ID was used as the stable correlation value because names and email addresses can change, while employee identifiers are better suited for matching source records to governed identities.
 
-## Portfolio Card Copy
+- Inbound mappings were used to normalize HR attributes into midPoint identity attributes before provisioning decisions were made.
 
-**Title:** Enterprise IAM Lifecycle Automation
-**Category:** Identity Governance
-**Tech Stack:** midPoint · OpenLDAP · LDAP · Groovy · Linux · IGA · Reconciliation
+- Outbound mappings were used to translate governed identity attributes into the LDAP schema required by the target directory.
 
-**Description:**
-Implemented an HR-driven IAM lifecycle pipeline using midPoint and OpenLDAP. The project demonstrates authoritative source integration, attribute mapping, identity correlation, reconciliation, role-based LDAP provisioning, Joiner/Leaver lifecycle automation, non-human identity discovery, and audit evidence validation.
+- Role construction was used to trigger LDAP provisioning because connecting a target resource alone does not define who should receive an account.
 
-**Business Risk Addressed:**
-Manual identity administration, delayed offboarding, unmanaged service accounts, weak audit evidence, and inconsistent lifecycle enforcement across downstream systems.
+- Reconciliation was used as the lifecycle trigger because the IAM platform must compare source, governance, and target state before taking action.
 
-**Evidence Produced:**
-Architecture diagram, inbound/outbound mapping tables, joiner/leaver screenshots, LDAP verification, audit logs, unmatched account finding, and GRC control mapping.
+- Leaver processing was driven by HR status so that access removal followed the authoritative employment lifecycle event.
 
----
+- The project configuration removed the downstream LDAP account from active access, while the recommended production pattern is usually disablement or movement to an inactive state before deletion.
 
-## Interview Talking Points
+- Terminated workforce records were retained in the HR source because employment history may be needed for legal, payroll, tax, investigation, and audit purposes.
 
-* Explain why HR should be the authoritative source for workforce identities.
-* Explain the difference between inbound and outbound mappings.
-* Explain how correlation prevents duplicate identities.
-* Explain the difference between reconciliation and provisioning.
-* Explain why target systems require their own attribute mappings.
-* Explain why connecting a resource is not enough without a role construction.
-* Explain why production environments often disable accounts before deleting them.
-* Explain how reconciliation can detect unmanaged service accounts and non-human identities.
-* Explain how audit evidence supports compliance and access governance.
-* Explain how this pattern maps to SailPoint, Saviynt, Okta, Entra ID, Active Directory, and AWS IAM Identity Center.
+- Unmatched LDAP accounts were treated as governance findings because target accounts without a matching governed identity may represent orphaned access, unmanaged service accounts, or non-human identity risk.
 
----
+- Audit evidence was treated as part of the control because IAM changes must be provable, not just technically successful.
 
-## Resume Bullet
-
-Designed and implemented an enterprise IAM lifecycle automation project using midPoint IGA and OpenLDAP, integrating an HR source for automated identity creation, attribute mapping, identity correlation, reconciliation, LDAP provisioning, leaver handling, non-human identity discovery, and audit evidence validation mapped to access governance controls.
-
-Implemented HR-driven IAM lifecycle pipeline in midPoint IGA — configured CSV connector, Groovy attribute mappings, correlation rules, and role-based LDAP provisioning with automated Joiner/Leaver workflows and reconciliation-initiated audit trail demonstrating zero manual access changes.
+- The implementation was documented with enterprise platform equivalents so the architecture pattern can be understood across tools such as SailPoint, Saviynt, Entra ID Governance, Active Directory, and AWS IAM Identity Center.

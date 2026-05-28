@@ -1,6 +1,3 @@
-# File: `lessons-learned.md`
-
-```markdown
 # Lessons Learned
 
 ## 1. IAM Is a Control System, Not Just Account Creation
