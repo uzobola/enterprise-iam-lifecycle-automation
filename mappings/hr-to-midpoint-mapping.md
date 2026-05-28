@@ -61,7 +61,3 @@ Email address = corporate email policy
 ```
 
 The project uses employee ID as a practical stable identifier for the implementation, while documenting how the design would be adapted in a production IAM environment.
-
-````
-
----

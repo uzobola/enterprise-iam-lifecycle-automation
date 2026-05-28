@@ -1,0 +1,9 @@
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+secrets*
+tokens*
+.DS_Store

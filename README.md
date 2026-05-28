@@ -51,7 +51,7 @@ Object adds, object modifications, reconciliation results, unmatched accounts
 | OpenLDAP / 389 Directory Server | Target enterprise directory                               |
 | phpLDAPadmin                    | LDAP account verification                                 |
 | Groovy                          | Attribute transformation and lifecycle logic              |
-| Linux                           | Directory service and lab platform support                |
+| Linux                           | Directory service and project implementation platform support                |
 
 ---
 
@@ -378,6 +378,71 @@ It also shows how identity governance can support compliance readiness by produc
 
 ---
 
+## Repository Structure
+
+```text
+enterprise-iam-lifecycle-automation/
+├── README.md
+├── architecture/
+│   └── iam-lifecycle-architecture.png
+├── screenshots/
+│   ├── 01-simplifyhr-before-state.png
+│   ├── 02-midpoint-hr-resource-inbound-mappings.png
+│   ├── 03-midpoint-users-after-hr-reconciliation.png
+│   ├── 04-openldap-resource-outbound-mappings.png
+│   ├── 05-ldap-accounts-provisioned.png
+│   ├── 06-joiner-before-after.png
+│   ├── 07-leaver-simplifyhr-terminated.png
+│   ├── 08-leaver-midpoint-disabled.png
+│   ├── 09-leaver-ldap-account-removed.png
+│   ├── 10-audit-log-lifecycle-events.png
+│   └── 11-unmatched-service-account.png
+├── evidence/
+│   ├── evidence-map.md
+│   └── grc-control-mapping.md
+├── mappings/
+│   ├── hr-to-midpoint-mapping.md
+│   └── midpoint-to-openldap-mapping.md
+└── lessons-learned.md
+```
+
+---
+
+## Screenshot Evidence Map
+
+| Screenshot                                    | File Name                                       | What It Proves                                                                      | README Section Supported            |
+| --------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- |
+| SimplifyHR initial workforce / active records | `01-simplifyhr-before-state.png`                | HR source contained the workforce population before IAM processing                  | Business Problem / Phase 1          |
+| SimplifyHR inbound mappings                   | `02-midpoint-hr-resource-inbound-mappings.png`  | HR attributes were mapped into midPoint identity attributes                         | Attribute Mapping Design            |
+| midPoint Users page after HR reconciliation   | `03-midpoint-users-after-hr-reconciliation.png` | HR records became governed midPoint focus objects                                   | Phase 1 / Evidence Captured         |
+| OpenLDAP outbound mappings                    | `04-openldap-resource-outbound-mappings.png`    | midPoint attributes were mapped to LDAP account attributes                          | Phase 2 / Attribute Mapping Design  |
+| LDAP accounts provisioned in phpLDAPadmin     | `05-ldap-accounts-provisioned.png`              | Accounts were created in the downstream directory through IAM provisioning          | Phase 2 / Evidence Captured         |
+| Joiner before/after screenshots               | `06-joiner-before-after.png`                    | A new employee was created in HR and provisioned through reconciliation             | Joiner Flow                         |
+| SimplifyHR leaver state for Oliver Bennett    | `07-leaver-simplifyhr-terminated.png`           | HR retained Oliver as terminated while removing him from active identity population | Leaver Flow                         |
+| midPoint disabled state for Oliver Bennett    | `08-leaver-midpoint-disabled.png`               | midPoint detected the HR lifecycle change and disabled the governed identity        | Leaver Flow / GRC Mapping           |
+| LDAP account removed from active target       | `09-leaver-ldap-account-removed.png`            | Downstream active LDAP access was removed after reconciliation                      | Leaver Flow / Evidence Captured     |
+| Audit log / Records lifecycle events          | `10-audit-log-lifecycle-events.png`             | Lifecycle events were system-recorded with timestamps and initiator details         | GRC and Compliance Evidence Mapping |
+| Unmatched service account / NHI finding       | `11-unmatched-service-account.png`              | LDAP contained an account without a governed identity owner or HR source            | NHI / Orphan Account Discovery      |
+
+---
+
+## Portfolio Card Copy
+
+**Title:** Enterprise IAM Lifecycle Automation
+**Category:** Identity Governance
+**Tech Stack:** midPoint · OpenLDAP · LDAP · Groovy · Linux · IGA · Reconciliation
+
+**Description:**
+Implemented an HR-driven IAM lifecycle pipeline using midPoint and OpenLDAP. The project demonstrates authoritative source integration, attribute mapping, identity correlation, reconciliation, role-based LDAP provisioning, Joiner/Leaver lifecycle automation, non-human identity discovery, and audit evidence validation.
+
+**Business Risk Addressed:**
+Manual identity administration, delayed offboarding, unmanaged service accounts, weak audit evidence, and inconsistent lifecycle enforcement across downstream systems.
+
+**Evidence Produced:**
+Architecture diagram, inbound/outbound mapping tables, joiner/leaver screenshots, LDAP verification, audit logs, unmatched account finding, and GRC control mapping.
+
+---
+
 ## Interview Talking Points
 
 * Explain why HR should be the authoritative source for workforce identities.
@@ -395,5 +460,6 @@ It also shows how identity governance can support compliance readiness by produc
 
 ## Resume Bullet
 
-Implemented HR-driven IAM lifecycle pipeline in midPoint IGA — configured CSV connector, Groovy attribute mappings, correlation rules, and role-based LDAP provisioning with automated Joiner/Leaver workflows and reconciliation-initiated audit trail demonstrating zero manual access changes.
+Designed and implemented an enterprise IAM lifecycle automation project using midPoint IGA and OpenLDAP, integrating an HR source for automated identity creation, attribute mapping, identity correlation, reconciliation, LDAP provisioning, leaver handling, non-human identity discovery, and audit evidence validation mapped to access governance controls.
 
+Implemented HR-driven IAM lifecycle pipeline in midPoint IGA — configured CSV connector, Groovy attribute mappings, correlation rules, and role-based LDAP provisioning with automated Joiner/Leaver workflows and reconciliation-initiated audit trail demonstrating zero manual access changes.
