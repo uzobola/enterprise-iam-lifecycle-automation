@@ -144,9 +144,9 @@ Result: the unmanaged service account was identified as a governance finding req
 
 ## Enterprise Platform Equivalents
 
-This project used midPoint and OpenLDAP in a lab environment, but the same IAM architecture patterns apply to common enterprise IAM and IGA platforms.
+This project used midPoint and OpenLDAP in this environment, but the same IAM architecture patterns apply to common enterprise IAM and IGA platforms.
 
-| Lab / Project Component              | Enterprise Equivalent                                                      | Conceptual Meaning                                   |
+| Project Component              | Enterprise Equivalent                                                      | Conceptual Meaning                                   |
 | ------------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------- |
 | midPoint                             | SailPoint IdentityNow / IdentityIQ, Saviynt, Microsoft Entra ID Governance | IGA platform / identity governance control plane     |
 | SimplifyHR CSV connector             | Workday, SuccessFactors, UKG, REST API, SCIM, HR flat-file feed            | Authoritative source integration                     |
