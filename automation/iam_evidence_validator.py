@@ -40,8 +40,10 @@ import csv
 import json
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional, List, Dict
 
 try:
     from ldap3 import Server, Connection, ALL, SUBTREE, ALL_ATTRIBUTES
@@ -57,7 +59,7 @@ except ImportError:
 LDAP_HOST     = os.getenv("LDAP_HOST",     "127.0.0.1")
 LDAP_PORT     = int(os.getenv("LDAP_PORT", "389"))
 LDAP_BIND_DN  = os.getenv("LDAP_BIND_DN",  "cn=Directory Manager")
-LDAP_PASSWORD = os.getenv("LDAP_PASSWORD", "Admin1234!")
+LDAP_PASSWORD = os.getenv("LDAP_PASSWORD")
 
 BASE_DN       = "dc=simplifyiam,dc=com"
 PEOPLE_OU     = f"ou=people,{BASE_DN}"
@@ -78,7 +80,7 @@ LDAP_ATTRS = [
 # ── Finding definitions ───────────────────────────────────────────────────────
 # Each finding type maps to a severity, SOC 2 control, and remediation action.
 
-FINDING_TYPES: dict[str, dict[str, str]] = {
+FINDING_TYPES: Dict[str, Dict[str, str]] = {
     "LEAVER_ACTIVE_ACCOUNT": {
         "severity":    "CRITICAL",
         "control":     "SOC 2 CC6.3",
@@ -146,12 +148,12 @@ FINDING_TYPES: dict[str, dict[str, str]] = {
 
 # ── HR source reader ──────────────────────────────────────────────────────────
 
-def load_hr_records(csv_path: str) -> dict[str, dict[str, str]]:
+def load_hr_records(csv_path: str) -> Dict[str, Dict[str, str]]:
     """
     Read the HR CSV and return a dict keyed on empid.
     Raises FileNotFoundError if the CSV path does not exist.
     """
-    records: dict[str, dict[str, str]] = {}
+    records: Dict[str, Dict[str, str]] = {}
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             empid = row["empid"].strip()
@@ -161,12 +163,12 @@ def load_hr_records(csv_path: str) -> dict[str, dict[str, str]]:
 
 # ── LDAP reader ───────────────────────────────────────────────────────────────
 
-def load_ldap_accounts(conn: Connection) -> dict[str, dict[str, Any]]:
+def load_ldap_accounts(conn: Connection) -> Dict[str, Dict[str, Any]]:
     """
     Query LDAP for all accounts across ou=people, ou=inactive, and ou=services.
     Returns a dict keyed on uid (which holds the empid value).
     """
-    accounts: dict[str, dict[str, Any]] = {}
+    accounts: Dict[str, Dict[str, Any]] = {}
 
     search_targets = [
         (PEOPLE_OU,   "people"),
@@ -211,9 +213,9 @@ def make_finding(
     finding_type: str,
     empid: str,
     detail: str,
-    hr_data: dict | None = None,
-    ldap_data: dict | None = None,
-) -> dict[str, Any]:
+    hr_data: Optional[dict] = None,
+    ldap_data: Optional[dict] = None,
+) -> dict:
     """Construct a single structured finding dict."""
     template = FINDING_TYPES[finding_type]
     return {
@@ -232,13 +234,13 @@ def make_finding(
 # ── Validation checks ─────────────────────────────────────────────────────────
 
 def run_checks(
-    hr: dict[str, dict],
-    ldap: dict[str, dict],
-) -> list[dict[str, Any]]:
+    hr: Dict[str, Dict],
+    ldap: Dict[str, Dict],
+) -> List[Dict[str, Any]]:
     """
     Run all governance checks and return a flat list of findings.
     """
-    findings: list[dict[str, Any]] = []
+    findings: List[Dict[str, Any]] = []
 
     # ── HR → LDAP checks ─────────────────────────────────────────────────────
     for empid, hr_rec in hr.items():

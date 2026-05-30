@@ -2,7 +2,7 @@
 
 **HR-driven workforce identity lifecycle automation using midPoint and OpenLDAP.**
 
-This project simulates an enterprise Identity Governance and Administration implementation where an HR source acts as the authoritative identity system, midPoint performs identity governance and reconciliation, and OpenLDAP represents a downstream enterprise directory.
+This project implements production-aligned Identity Governance and Administration patterns using midPoint and OpenLDAP — demonstrating how an HR-driven lifecycle pipeline provisions and governs workforce identities across source, IGA, and directory layers.
 
 The implementation demonstrates joiner automation, HR-to-IGA inbound mapping, target-system outbound mapping, identity correlation, reconciliation, LDAP account provisioning, leaver handling, non-human identity discovery, and audit evidence validation.
 
