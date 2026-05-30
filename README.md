@@ -291,6 +291,7 @@ Link to owner, remove if unauthorized, or document exception
 | Audit logs / records                            | Lifecycle events were logged with timestamps and initiator details               |
 | Unmatched service account screenshot            | LDAP account existed without an approved identity owner or HR source             |
 | Reconciliation result showing unmatched account | Governance process can detect accounts created outside IAM                       |
+| IAM evidence validator output | HR and LDAP state were independently compared to identify lifecycle, provisioning, NHI, and manager-assignment findings |
 
 ---
 
@@ -310,6 +311,35 @@ This project connects IAM implementation work to audit evidence. The table below
 > Note: Framework mappings are illustrative and should be validated against the organization’s control library, audit scope, and auditor expectations.
 
 ---
+
+## IAM Evidence Validator
+
+This project includes a Python-based IAM evidence validator that compares the authoritative HR source against the LDAP directory state and produces a structured findings report mapped to SOC 2-style access controls.
+
+The validator checks for:
+
+- Terminated employees with active LDAP accounts
+- Active employees missing LDAP accounts
+- LDAP accounts with no matching HR record
+- Attribute drift between HR and LDAP
+- Missing manager assignments
+- Self-manager review risks
+- Service accounts requiring non-human identity governance review
+
+The output is a JSON evidence report with severity ratings, remediation guidance, source/target snapshots, and SOC 2 control mappings.
+
+Running the validator against this environment produced 4 findings:
+
+- 1 MEDIUM finding: Oliver Bennett’s inactive LDAP account was not locked in `ou=inactive`
+- 3 LOW findings: manager assignment review gaps
+
+This demonstrates how IAM lifecycle evidence can be converted into structured GRC findings for access control validation and remediation tracking.
+
+```bash
+pip install -r requirements.txt
+LDAP_PASSWORD='your-password' python automation/iam_evidence_validator.py
+```
+
 
 ## Security Risks Addressed
 
