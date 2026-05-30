@@ -1,0 +1,112 @@
+{
+  "report_metadata": {
+    "generated_at": "2026-05-30T02:44:36.796503+00:00",
+    "generated_by": "iam_evidence_validator.py",
+    "hr_source": "/opt/midpoint/var/hr.csv",
+    "ldap_host": "127.0.0.1",
+    "base_dn": "dc=simplifyiam,dc=com",
+    "hr_records_count": 8,
+    "ldap_accounts_count": 8,
+    "total_findings": 4
+  },
+  "finding_summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 3
+  },
+  "grc_control_coverage": {
+    "SOC 2 CC6.1": "Logical access controls — orphaned accounts and attribute drift",
+    "SOC 2 CC6.2": "Access provisioning — joiner gaps and manager assignment",
+    "SOC 2 CC6.3": "Access removal — leaver failures and inactive account state"
+  },
+  "findings": [
+    {
+      "finding_type": "LEAVER_ACCOUNT_NOT_LOCKED",
+      "severity": "MEDIUM",
+      "control": "SOC 2 CC6.3",
+      "title": "Terminated employee account in ou=inactive is not locked",
+      "empid": "1006",
+      "detail": "Oliver Bennett (empid 1006) is in ou=inactive but nsAccountLock is not set to true",
+      "remediation": "Set nsAccountLock=true on account — account should be locked when moved to inactive OU",
+      "hr_snapshot": {
+        "empid": "1006",
+        "firstname": "Oliver",
+        "lastname": "Bennett",
+        "department": "Engineering",
+        "status": "Terminated",
+        "costcenter": "ENG-004",
+        "manager": "1004"
+      },
+      "ldap_snapshot": {
+        "uid": "1006",
+        "givenName": "Oliver",
+        "sn": "Bennett",
+        "cn": "Oliver Bennett",
+        "mail": "1006@simplifytech.com",
+        "departmentNumber": "ENG-004",
+        "employeeNumber": "1006",
+        "nsAccountLock": "false",
+        "dn": "uid=1006,ou=inactive,dc=simplifyiam,dc=com",
+        "ou": "inactive"
+      }
+    },
+    {
+      "finding_type": "SELF_MANAGER",
+      "severity": "LOW",
+      "control": "SOC 2 CC6.2",
+      "title": "Employee is assigned as their own manager",
+      "empid": "1001",
+      "detail": "Sophie Müller (empid 1001) is assigned as their own manager (manager empid = 1001) — verify this is a top-level manager",
+      "remediation": "Verify this is intentional (top-level manager) — if not, update HR source with correct manager empid",
+      "hr_snapshot": {
+        "empid": "1001",
+        "firstname": "Sophie",
+        "lastname": "Müller",
+        "department": "Engineering",
+        "status": "Active",
+        "costcenter": "ENG-001",
+        "manager": "1001"
+      },
+      "ldap_snapshot": {}
+    },
+    {
+      "finding_type": "SELF_MANAGER",
+      "severity": "LOW",
+      "control": "SOC 2 CC6.2",
+      "title": "Employee is assigned as their own manager",
+      "empid": "1004",
+      "detail": "Thomas Weber (empid 1004) is assigned as their own manager (manager empid = 1004) — verify this is a top-level manager",
+      "remediation": "Verify this is intentional (top-level manager) — if not, update HR source with correct manager empid",
+      "hr_snapshot": {
+        "empid": "1004",
+        "firstname": "Thomas",
+        "lastname": "Weber",
+        "department": "HR",
+        "status": "Active",
+        "costcenter": "HR-001",
+        "manager": "1004"
+      },
+      "ldap_snapshot": {}
+    },
+    {
+      "finding_type": "NO_MANAGER_ASSIGNED",
+      "severity": "LOW",
+      "control": "SOC 2 CC6.2",
+      "title": "Employee has no manager assigned in HR source",
+      "empid": "1008",
+      "detail": "Franken Stein (empid 1008) has no manager assigned in HR — access certification reviews cannot be automatically assigned",
+      "remediation": "Update HR source with manager empid — required for access certification reviewer assignment",
+      "hr_snapshot": {
+        "empid": "1008",
+        "firstname": "Franken",
+        "lastname": "Stein",
+        "department": "Operations",
+        "status": "Active",
+        "costcenter": "OPS-002",
+        "manager": ""
+      },
+      "ldap_snapshot": {}
+    }
+  ]
+}
